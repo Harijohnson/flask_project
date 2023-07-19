@@ -14,7 +14,7 @@ app.config["SECRET_KEY"] = "harijohnson321"
 
 def token_required(f):
     @wraps(f)
-    def decorated(bson='507f191e810c19729de860ea', *args, **kwargs):
+    def decorated(bson='64b7f0bf23f088013921605f', *args, **kwargs):
         token = None
 
         if "Authorization" in request.headers:
