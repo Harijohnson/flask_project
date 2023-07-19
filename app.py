@@ -7,7 +7,7 @@ from functools import wraps
 
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb://localhost:27017"
+app.config["MONGO_URI"] = "mongodb+srv://flask_db:flask_db @flasktest.foy382l.mongodb.net/flask_db?retryWrites=true&w=majority"
 mongo = PyMongo(app)
 app.config["SECRET_KEY"] = "harijohnson321"
 
