@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import *
 from flask_pymongo import PyMongo
 import jwt
 import datetime
