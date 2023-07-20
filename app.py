@@ -6,9 +6,9 @@ from bson import ObjectId
 from functools import wraps
 
 app = Flask(__name__)
-app.config["MONGO_URI"] = "mongodb+srv://flask_db:flask_db @flasktest.foy382l.mongodb.net/flask_db?retryWrites=true&w=majority"
+app.config["MONGO_URI"] = "mongodb+srv://flask_db:flask_db@flasktest.foy382l.mongodb.net/flask_db?retryWrites=true&w=majority"
 mongo = PyMongo(app)
-app.config["SECRET_KEY"] = "harijohnson321"
+app.config["SECRET_KEY"] = "EZXUK7oc6IePNdWH"
 
 
 def token_required(f):
@@ -162,4 +162,4 @@ def delete_template(current_user, template_id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+   app.run(host="0.0.0.0", port=5000)
