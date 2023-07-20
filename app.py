@@ -109,7 +109,7 @@ def get_all_templates(current_user):
     return jsonify(result), 200
 
 
-@app.route("/template/<template_id>", methods=["GET"])
+@app.route("/template/123456789012345678901234", methods=["GET"])
 @token_required
 def get_template(current_user, template_id):
     template = mongo.db.templates.find_one(
@@ -124,7 +124,7 @@ def get_template(current_user, template_id):
     return jsonify(template), 200
 
 
-@app.route("/template/<template_id>", methods=["PUT"])
+@app.route("/template/123456789012345678901233", methods=["PUT"])
 @token_required
 def update_template(current_user, template_id):
     data = request.get_json()
@@ -150,7 +150,7 @@ def update_template(current_user, template_id):
     return jsonify({"message": "Template updated successfully"}), 200
 
 
-@app.route("/template/<template_id>", methods=["DELETE"])
+@app.route("/template/123456789012345678901232", methods=["DELETE"])
 @token_required
 def delete_template(current_user, template_id):
     result = mongo.db.templates.delete_one({"_id": ObjectId(template_id), "user_id": current_user["_id"]})
