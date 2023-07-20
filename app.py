@@ -1,10 +1,9 @@
-from flask import *
+from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 import jwt
 import datetime
 from bson import ObjectId
 from functools import wraps
-
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb+srv://flask_db:flask_db @flasktest.foy382l.mongodb.net/flask_db?retryWrites=true&w=majority"
@@ -14,7 +13,7 @@ app.config["SECRET_KEY"] = "harijohnson321"
 
 def token_required(f):
     @wraps(f)
-    def decorated(bson='64b7f0bf23f088013921605f', *args, **kwargs):
+    def decorated(*args, **kwargs):
         token = None
 
         if "Authorization" in request.headers:
@@ -25,7 +24,7 @@ def token_required(f):
 
         try:
             data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
-            current_user = mongo.db.users.find_one({"_id": bson.ObjectId(data["user_id"])})
+            current_user = mongo.db.users.find_one({"_id": ObjectId(data["user_id"])})
         except:
             return jsonify({"message": "Token is invalid!"}), 401
 
@@ -62,22 +61,19 @@ def login():
 
     user = mongo.db.users.find_one({"email": auth.username})
 
-    if not user:
-        return jsonify({"message": "User not found"}), 401
+    if not user or user["password"] != auth.password:
+        return jsonify({"message": "Invalid credentials"}), 401
 
-    if user["password"] == auth.password:
-        token = jwt.encode(
-            {
-                "user_id": str(user["_id"]),
-                "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
-            },
-            app.config["SECRET_KEY"],
-            algorithm="HS256",
-        )
+    token = jwt.encode(
+        {
+            "user_id": str(user["_id"]),
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+        },
+        app.config["SECRET_KEY"],
+        algorithm="HS256",
+    )
 
-        return jsonify({"token": token}), 200
-
-    return jsonify({"message": "Invalid credentials"}), 401
+    return jsonify({"token": token}), 200
 
 
 @app.route("/template", methods=["POST"])
@@ -117,7 +113,7 @@ def get_all_templates(current_user):
 @token_required
 def get_template(current_user, template_id):
     template = mongo.db.templates.find_one(
-        {"_id": bson.ObjectId(template_id), "user_id": current_user["_id"]}
+        {"_id": ObjectId(template_id), "user_id": current_user["_id"]}
     )
 
     if not template:
@@ -144,7 +140,7 @@ def update_template(current_user, template_id):
     }
 
     mongo.db.templates.update_one(
-        {"_id": bson.ObjectId(template_id), "user_id": current_user["_id"]},
+        {"_id": ObjectId(template_id), "user_id": current_user["_id"]},
         {"$set": updated_template},
     )
 
@@ -155,7 +151,7 @@ def update_template(current_user, template_id):
 @token_required
 def delete_template(current_user, template_id):
     result = mongo.db.templates.delete_one(
-        {"_id": bson.ObjectId(template_id), "user_id": current_user["_id"]}
+        {"_id": ObjectId(template_id), "user_id": current_user["_id"]}
     )
 
     if result.deleted_count == 1:
