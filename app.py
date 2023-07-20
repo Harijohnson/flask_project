@@ -37,8 +37,8 @@ def token_required(f):
 def register():
     data = request.get_json()
 
-    if not data:
-        return jsonify({"message": "No input data provided"}), 400
+    if not data or not all(key in data for key in ["first_name", "last_name", "email", "password"]):
+        return jsonify({"message": "Invalid input data"}), 400
 
     user = {
         "first_name": data["first_name"],
@@ -47,6 +47,10 @@ def register():
         "password": data["password"],
     }
 
+    existing_user = mongo.db.users.find_one({"email": data["email"]})
+    if existing_user:
+        return jsonify({"message": "User with this email already exists"}), 409
+
     mongo.db.users.insert_one(user)
 
     return jsonify({"message": "User registered successfully"}), 201
@@ -54,21 +58,17 @@ def register():
 
 @app.route("/login", methods=["POST"])
 def login():
-    auth = request.authorization
+    data = request.get_json()
 
-    if not auth or not auth.username or not auth.password:
-        return jsonify({"message": "Could not verify"}), 401
+    if not data or not all(key in data for key in ["email", "password"]):
+        return jsonify({"message": "Invalid input data"}), 400
 
-    user = mongo.db.users.find_one({"email": auth.username})
-
-    if not user or user["password"] != auth.password:
+    user = mongo.db.users.find_one({"email": data["email"]})
+    if not user or user["password"] != data["password"]:
         return jsonify({"message": "Invalid credentials"}), 401
 
     token = jwt.encode(
-        {
-            "user_id": str(user["_id"]),
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
-        },
+        {"user_id": str(user["_id"]), "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)},
         app.config["SECRET_KEY"],
         algorithm="HS256",
     )
@@ -81,8 +81,8 @@ def login():
 def insert_template(current_user):
     data = request.get_json()
 
-    if not data:
-        return jsonify({"message": "No input data provided"}), 400
+    if not data or not all(key in data for key in ["template_name", "subject", "body"]):
+        return jsonify({"message": "Invalid input data"}), 400
 
     template = {
         "user_id": current_user["_id"],
@@ -129,8 +129,8 @@ def get_template(current_user, template_id):
 def update_template(current_user, template_id):
     data = request.get_json()
 
-    if not data:
-        return jsonify({"message": "No input data provided"}), 400
+    if not data or not all(key in data for key in ["template_name", "subject", "body"]):
+        return jsonify({"message": "Invalid input data"}), 400
 
     updated_template = {
         "user_id": current_user["_id"],
@@ -139,10 +139,13 @@ def update_template(current_user, template_id):
         "body": data["body"],
     }
 
-    mongo.db.templates.update_one(
+    result = mongo.db.templates.update_one(
         {"_id": ObjectId(template_id), "user_id": current_user["_id"]},
         {"$set": updated_template},
     )
+
+    if result.modified_count == 0:
+        return jsonify({"message": "Template not found or you don't have permission to update"}), 404
 
     return jsonify({"message": "Template updated successfully"}), 200
 
@@ -150,15 +153,13 @@ def update_template(current_user, template_id):
 @app.route("/template/<template_id>", methods=["DELETE"])
 @token_required
 def delete_template(current_user, template_id):
-    result = mongo.db.templates.delete_one(
-        {"_id": ObjectId(template_id), "user_id": current_user["_id"]}
-    )
+    result = mongo.db.templates.delete_one({"_id": ObjectId(template_id), "user_id": current_user["_id"]})
 
-    if result.deleted_count == 1:
-        return jsonify({"message": "Template deleted successfully"}), 200
+    if result.deleted_count == 0:
+        return jsonify({"message": "Template not found or you don't have permission to delete"}), 404
 
-    return jsonify({"message": "Template not found"}), 404
+    return jsonify({"message": "Template deleted successfully"}), 200
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
